@@ -16,7 +16,7 @@ class App:
         self.model = YOLO('runs/detect/train/weights/best.pt')
 
         # specify the path to the folder containing the images
-        self.folder_path = 'dataset/images/train'
+        self.folder_path = 'dataset/images/val'
 
         # get a list of all the files in the folder
         self.file_list = os.listdir(self.folder_path)
