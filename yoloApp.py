@@ -8,7 +8,7 @@ class App:
     def __init__(self, master):
         self.master = master
         self.master.title("Image Viewer")
-        self.master.geometry("660x710")
+        self.master.geometry("660x750")
 
         self.photo = None
 
@@ -16,7 +16,7 @@ class App:
         self.model = YOLO('runs/detect/train/weights/best.pt')
 
         # specify the path to the folder containing the images
-        self.folder_path = 'dataset/images/val'
+        self.folder_path = 'dataset/images/train'
 
         # get a list of all the files in the folder
         self.file_list = os.listdir(self.folder_path)
@@ -78,9 +78,14 @@ class App:
         self.canvas.image = self.photo
         self.canvas.grid(row=0, column=0, padx=10, pady=10, sticky='we')
         
+        # create a button to go to the previous image
+        self.prev_button = tk.Button(self.master, text="Previous Image", command=self.previous_image)
+        self.prev_button.grid(row=1, column=0, padx=10, pady=10, sticky='we')
+
         # create a button to go to the next image
         self.next_button = tk.Button(self.master, text="Next Image", command=self.next_image)
-        self.next_button.grid(row=1, column=0, padx=10, pady=10, sticky='we')
+        self.next_button.grid(row=2, column=0, padx=10, pady=10, sticky='we')
+
 
     def next_image(self):
         # increment the image index
@@ -94,6 +99,20 @@ class App:
         self.canvas.delete("all")
 
         # display the next image
+        self.display_image()
+
+    def previous_image(self):
+        # decrement the image index
+        self.image_index -= 1
+
+        # if we've reached the beginning of the file list, go to the end
+        if self.image_index < 0:
+            self.image_index = len(self.file_list) - 1
+
+        # clear the canvas
+        self.canvas.delete("all")
+
+        # display the previous image
         self.display_image()
 
 root = tk.Tk()
