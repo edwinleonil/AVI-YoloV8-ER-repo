@@ -1,39 +1,55 @@
 import tkinter as tk
+from tkinter import filedialog
 from PIL import Image, ImageTk, ImageDraw
 import os
 import numpy as np
 from ultralytics import YOLO
 
 class App:
-    def __init__(self, master):
+    def __init__(self, master, model_path, folder_path):
         self.master = master
         self.master.title("Image Viewer")
-        self.master.geometry("660x750")
+        self.master.geometry("660x800")
+
+        self.model = YOLO(model_path)
+        self.folder_path = folder_path
 
         self.photo = None
 
-        # Load a pretrained YOLO model (recommended for training)
-        self.model = YOLO('runs/detect/train/weights/best.pt')
-
-        # specify the path to the folder containing the images
-        self.folder_path = 'dataset/images/train'
-
         # get a list of all the files in the folder
         self.file_list = os.listdir(self.folder_path)
-
-        # set the current image index to 0
-        self.image_index = 0
 
         # create a canvas to display the image
         self.canvas = tk.Canvas(self.master, width=640, height=640)
         self.canvas.grid(row=0, column=0, padx=10, pady=10, sticky='we')
 
-        # create a button to go to the next image
-        self.next_button = tk.Button(self.master, text="Next Image", command=self.next_image)
-        self.next_button.grid(row=1, column=0, padx=10, pady=10, sticky='we')
+        # Create a button to select the model path
+        self.select_model_button = tk.Button(self.master, text="Select Model", command=self.select_model_path)
+        self.select_model_button.grid(row=1, column=0, padx=10, pady=10, sticky='we')
 
-        # display the first image
-        self.display_image()
+        # Create a button to select the image folder path
+        self.select_folder_button = tk.Button(self.master, text="Select tes images folder", command=self.select_folder_path)
+        self.select_folder_button.grid(row=2, column=0, padx=10, pady=10, sticky='we')
+
+        # set the current image index to 0
+        self.image_index = 0
+
+        # create a button to go to the next image
+        self.next_button = tk.Button(self.master, text="Start predicting", command=self.next_image)
+        self.next_button.grid(row=3, column=0, padx=10, pady=10, sticky='we')
+
+    def select_model_path(self):
+        # Open a file dialog to select the model path
+        model_path = filedialog.askopenfilename()
+
+        # Load the YOLO model with the selected path
+        self.model = YOLO(model_path)
+
+    def select_folder_path(self):
+        # Open a file dialog to select the folder path
+        self.folder_path = filedialog.askdirectory()
+        # get a list of all the files in the folder
+        self.file_list = os.listdir(self.folder_path)
 
     def display_image(self):
         # joint the folder path and the image name
@@ -88,6 +104,10 @@ class App:
 
 
     def next_image(self):
+        # Remove the "Start predicting" button from the grid
+        self.next_button.grid_forget()
+        # Reduce the size of the window
+        self.master.geometry("660x780")
         # increment the image index
         self.image_index += 1
 
@@ -115,6 +135,11 @@ class App:
         # display the previous image
         self.display_image()
 
+# Define the default model path
+default_model_path = 'runs/detect/train/weights/best.pt'
+# Define the default folder path
+folder_path = 'dataset/images/val'
+
 root = tk.Tk()
-app = App(root)
+app = App(root, default_model_path, folder_path)
 root.mainloop()
