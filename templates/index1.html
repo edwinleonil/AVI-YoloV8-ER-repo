@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Gallery</title>
+</head>
+<body>
+    <h1>Image Gallery</h1>
+    <div style="display: flex; flex-direction: column; height: 100vh;">
+        <div style="flex: 7;">
+            <div style="display: flex; height: 100%;">
+                <div style="flex: 1;">
+                    <ul style="height: 100%;">
+                        {% for image_name in image_names %}
+                        <li><a href="{{ url_for('images', image_name=image_name) }}" target="image_frame">{{ image_name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div style="flex: 2;">
+                    <iframe name="image_frame" style="border: none; width: 100%; height: 100%;"></iframe>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div style="flex: 3;">
+            <h2>Upload Image</h2>
+            <form action="{{ url_for('uploadAction') }}" method="POST" enctype="multipart/form-data">
+                <input type="file" name="file">
+                <input type="submit" value="Upload">
+            </form>
+        </div>
+    </div>
+</body>
+</html>
