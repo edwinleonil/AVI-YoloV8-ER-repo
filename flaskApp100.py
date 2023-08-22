@@ -34,33 +34,12 @@ class App:
 
         # get the label, confidence and xyxy from the results
         for r in results:
-            label = r.boxes.cls.cpu().numpy().astype(int)
-            conf = r.boxes.conf.cpu().numpy().astype(float)
-            xyxy = r.boxes.xyxy.cpu().numpy().astype(int)
-
-            # joint the label, confidence and xyxy into a single list of one dimension
-            label_conf_xyxy = np.concatenate((label.reshape(-1,1), conf.reshape(-1,1), xyxy), axis=1)
-
-        # get p1 and p2
-        p1 = label_conf_xyxy[:,2:4]
-        p2 = label_conf_xyxy[:,4:6]
-
-        # convert p1 and p2 to a list of tuples adn keep them as integers
-        p1 = [tuple(map(int, p)) for p in p1]
-        p2 = [tuple(map(int, p)) for p in p2]
-
-        # open the image and convert it to a PIL Image
-        img = Image.open(image_path)
-        img = img.convert('RGB')
-
-        # draw the bounding boxes on the image
-        draw = ImageDraw.Draw(img)
-        for i in range(len(p1)):
-            draw.rectangle((p1[i], p2[i]), outline=(124,255,0), width=2)
+            im_array = r.plot()  # plot a BGR numpy array of predictions
+            im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
 
         # save the image to a temporary file
         temp_file = f"static/temp/{image_index}.png"
-        img.save(temp_file)
+        im.save(temp_file)
 
         return temp_file
 

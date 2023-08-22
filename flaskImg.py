@@ -2,8 +2,17 @@
 # use a html template to display the image file list and the images
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
-
+from PIL import Image, ImageDraw
 import os
+import numpy as np
+from ultralytics import YOLO
+import os
+import glob
+
+
+# load the YOLO model from a given path
+model_path = 'runs/detect/train/weights/best.pt'
+model = YOLO(model_path)
 
 app = Flask(__name__)
 
@@ -15,14 +24,46 @@ APP_IMAGES = os.path.join(APP_STATIC, 'images')
 # define the path to the template folder
 APP_TEMPLATES = os.path.join(APP_STATIC, 'templates')
 
+# define the function to predict objects in an image
+def predict_objects(image_path):
+    # make the prediction with the YOLO model
+    results = model(image_path)
+    # return the prediction results
+    return results
 
 # define the route to the index page
 @app.route('/')
 def index():
     # get the list of image files
     image_names = os.listdir(APP_IMAGES)
-    # render the index.html template with the image list
-    return render_template("index1.html", image_names=image_names)
+    # get the name of the current image
+    current_image = request.args.get('image_name')
+    
+    # predict objects in the current image
+    if current_image is not None:
+        image_path = os.path.join(APP_IMAGES, current_image)
+        print(image_path)
+        results = predict_objects(image_path)
+        # Show the results
+        for r in results:
+            im_array = r.plot()  # plot a BGR numpy array of predictions
+            im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
+             
+            print('success')
+
+            # need to show the image with the bounding boxes
+            # save the image to a temporary file
+            temp_file = f"static/temp/{current_image}"
+            im.save(temp_file)
+
+            # display image from temporary file
+            ###################################
+        
+
+
+    else:
+        results = None
+    return render_template('index1.html', image_names=image_names, current_image=current_image)
 
 
 # define the route to the image file

@@ -11,19 +11,29 @@
                 <div style="flex: 1;">
                     <ul style="height: 100%;">
                         {% for image_name in image_names %}
-                        <li><a href="{{ url_for('images', image_name=image_name) }}" target="image_frame">{{ image_name }}</a></li>
+                        <li {% if current_image == image_name %}class="selected"{% endif %}><a href="{{ url_for('index', image_name=image_name) }}">{{ image_name }}</a></li>
                         {% endfor %}
                     </ul>
                 </div>
                 <div style="flex: 2;">
-                    <iframe name="image_frame" style="border: none; width: 100%; height: 100%;"></iframe>
+                    {% if current_image is not none %}
+                    <img src="{{ url_for('static', filename='images/' + current_image) }}" alt="Current Image">
+                    {% endif %}
+                    {% if results is not none %}
+                    <h2>Prediction Results</h2>
+                    <ul>
+                        {% for r in results %}
+                        <li>{{ r.label }} - {{ r.confidence }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
                 </div>
             </div>
         </div>
         <hr>
         <div style="flex: 3;">
             <h2>Upload Image</h2>
-            <form action="{{ url_for('uploadAction') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
                 <input type="file" name="file">
                 <input type="submit" value="Upload">
             </form>
