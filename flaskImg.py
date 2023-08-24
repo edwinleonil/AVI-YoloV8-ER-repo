@@ -20,6 +20,12 @@ app = Flask(__name__)
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC = os.path.join(APP_ROOT, 'static')
 APP_IMAGES = os.path.join(APP_STATIC, 'images')
+APP_TEMP = os.path.join(APP_STATIC, 'temp')
+
+# delete all files in the temp folder
+files = glob.glob(APP_TEMP + '/*')
+for f in files:
+    os.remove(f)
 
 # define the path to the template folder
 APP_TEMPLATES = os.path.join(APP_STATIC, 'templates')
@@ -42,24 +48,15 @@ def index():
     # predict objects in the current image
     if current_image is not None:
         image_path = os.path.join(APP_IMAGES, current_image)
-        print(image_path)
         results = predict_objects(image_path)
         # Show the results
         for r in results:
             im_array = r.plot()  # plot a BGR numpy array of predictions
             im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
-             
-            print('success')
 
-            # need to show the image with the bounding boxes
             # save the image to a temporary file
             temp_file = f"static/temp/{current_image}"
             im.save(temp_file)
-
-            # display image from temporary file
-            ###################################
-        
-
 
     else:
         results = None
