@@ -1,4 +1,7 @@
-from flask import Flask, render_template, request
+# create a flask server to load images from a folder and display them on a webpage
+# use a html template to display the image file list and the images
+
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from PIL import Image, ImageDraw
 import os
 import numpy as np
@@ -6,88 +9,90 @@ from ultralytics import YOLO
 import os
 import glob
 
+
+# load the YOLO model from a given path
+model_path = 'models/best.pt'
+
+model = YOLO(model_path)
+
 app = Flask(__name__)
 
-class App:
-    def __init__(self, model_path, folder_path=None, image_path=None):
-        self.model = YOLO(model_path)
-        self.model_path = model_path
-        self.folder_path = folder_path
-        self.image_path = image_path
-        self.file_list = []
-        self.image_index = 0
+# define the path to the image folder
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+APP_STATIC = os.path.join(APP_ROOT, 'static')
+APP_IMAGES = os.path.join(APP_STATIC, 'images')
+APP_TEMP = os.path.join(APP_STATIC, 'temp')
 
-        if self.folder_path is not None:
-            self.file_list = sorted(glob.glob(os.path.join(self.folder_path, '*.png')))
-            if len(self.file_list) == 0:
-                raise ValueError(f"No images found in folder: {self.folder_path}")
-            self.image_path = self.file_list[self.image_index]
+# delete all files in the temp folder
+files = glob.glob(APP_TEMP + '/*')
+for f in files:
+    os.remove(f)
 
-    def display_image(self, image_index):
-        
-        # joint the folder path and the image name
-        # image_path = os.path.join(self.folder_path, image_index)
-        image_path = self.file_list[image_index]
-        
-        # Run inference on a single image
-        results = self.model(image_path)
+# define the path to the template folder
+APP_TEMPLATES = os.path.join(APP_STATIC, 'templates')
 
-        # get the label, confidence and xyxy from the results
-        for r in results:
-            label = r.boxes.cls.cpu().numpy().astype(int)
-            conf = r.boxes.conf.cpu().numpy().astype(float)
-            xyxy = r.boxes.xyxy.cpu().numpy().astype(int)
+# define the function to predict objects in an image
+def predict_objects(image_path):
+    # make the prediction with the YOLO model
+    results = model(image_path)
+    # return the prediction results
+    return results
 
-            # joint the label, confidence and xyxy into a single list of one dimension
-            label_conf_xyxy = np.concatenate((label.reshape(-1,1), conf.reshape(-1,1), xyxy), axis=1)
-
-        # get p1 and p2
-        p1 = label_conf_xyxy[:,2:4]
-        p2 = label_conf_xyxy[:,4:6]
-
-        # convert p1 and p2 to a list of tuples adn keep them as integers
-        p1 = [tuple(map(int, p)) for p in p1]
-        p2 = [tuple(map(int, p)) for p in p2]
-
-        # open the image and convert it to a PIL Image
-        img = Image.open(image_path)
-        img = img.convert('RGB')
-
-        # draw the bounding boxes on the image
-        draw = ImageDraw.Draw(img)
-        for i in range(len(p1)):
-            draw.rectangle((p1[i], p2[i]), outline=(124,255,0), width=2)
-
-        # save the image to a temporary file
-        temp_file = f"static/temp/{image_index}.png"
-        img.save(temp_file)
-
-        return temp_file
-
-# Define the default model path
-default_model_path = 'runs/detect/train/weights/best.pt'
-
-# default folder path
-default_folder_path = 'dataset/images/val'
-
-app_instance = App(default_model_path, folder_path=default_folder_path)
-
-@app.route('/', methods=['GET', 'POST'])
+# define the route to the index page
+@app.route('/')
 def index():
-    global app_instance
-    if request.method == 'POST':
-        if 'image' in request.files:
-            image_file = request.files['image']
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_file.filename)
-            app_instance = App(default_model_path, image_path)
+    # get the list of image files
+    image_names = os.listdir(APP_IMAGES)
+    # get the name of the current image
+    current_image = request.args.get('image_name')
     
-    # Get a list of all the files in the folder
-    folder_path = app_instance.folder_path
-    files = os.listdir(folder_path)
+    # predict objects in the current image
+    if current_image is not None:
+        image_path = os.path.join(APP_IMAGES, current_image)
+        results = predict_objects(image_path)
+        # Show the results
+        for r in results:
+            im_array = r.plot()  # plot a BGR numpy array of predictions
+            im = Image.fromarray(im_array[..., ::-1])  # RGB PIL image
 
-    image_path = app_instance.display_image(app_instance.image_index)
+            # save the image to a temporary file
+            temp_file = f"static/temp/{current_image}"
+            im.save(temp_file)
 
-    return render_template('index.html', image_path=image_path, files=files)
+    else:
+        results = None
+    return render_template('index.html', image_names=image_names, current_image=current_image)
 
+
+# define the route to the image file
+@app.route('/images/<image_name>')
+def images(image_name):
+    # return the image file
+    return send_from_directory(APP_IMAGES, image_name)
+
+
+# define the route to the upload page
+@app.route('/upload')
+def upload():
+    # render the upload.html template
+    return render_template("upload.html")
+
+
+# define the route to the upload action
+@app.route('/uploadAction', methods=['POST'])
+def uploadAction():
+    # get the file from the request
+    file = request.files['file']
+    # save the file to the image folder
+    file.save(os.path.join(APP_IMAGES, file.filename))
+    # redirect to the index page
+    return redirect(url_for('index'))
+
+
+# run the app
 if __name__ == '__main__':
     app.run(debug=True)
+
+# add close app when the server is stopped
+
+
