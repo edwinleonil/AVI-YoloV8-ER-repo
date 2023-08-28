@@ -136,7 +136,7 @@ class App:
         self.display_image()
 
 # Define the default model path
-default_model_path = 'runs/detect/train/weights/best.pt'
+default_model_path = 'models/best.pt'
 # Define the default folder path
 folder_path = 'dataset/images/val'
 
